@@ -1,0 +1,5 @@
+package com.socialmedia.user.repository;
+
+public class UserRepository {
+
+}
