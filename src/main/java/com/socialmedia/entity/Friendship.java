@@ -22,11 +22,11 @@ public class Friendship {
     @Column(nullable = false)
     private FriendshipStatus status;
 
-    // Default Constructor
+    
     public Friendship() {
     }
 
-    // Parameterized Constructor
+  
     public Friendship(int friendshipID, User user1, User user2, FriendshipStatus status) {
         this.friendshipID = friendshipID;
         this.user1 = user1;
@@ -34,7 +34,7 @@ public class Friendship {
         this.status = status;
     }
 
-    // Getters and Setters
+  
     public int getFriendshipID() {
         return friendshipID;
     }
