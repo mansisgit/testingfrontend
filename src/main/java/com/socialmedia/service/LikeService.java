@@ -47,7 +47,6 @@ public class LikeService {
             like.setTimestamp(LocalDateTime.now());
             likeRepository.save(like);
 
-            // Auto-Notification
             notificationService.createNotification(post.getUser(), 
                 user.getUsername() + " liked your post: " + post.getContent());
 
