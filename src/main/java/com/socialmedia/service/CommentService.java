@@ -1,35 +1,36 @@
 package com.socialmedia.service;
 
-import com.socialmedia.entity.Like;
+import com.socialmedia.entity.Comment;
 import com.socialmedia.entity.Post;
 import com.socialmedia.entity.User;
-import com.socialmedia.repository.LikeRepository;
+import com.socialmedia.repository.CommentRepository;
 import com.socialmedia.repository.PostRepository;
 import com.socialmedia.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
-public class LikeService {
+public class CommentService {
 
-    private final LikeRepository likeRepository;
+    private final CommentRepository commentRepository;
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
     @Autowired
-    public LikeService(LikeRepository likeRepository, PostRepository postRepository, 
-                      UserRepository userRepository, NotificationService notificationService) {
-        this.likeRepository = likeRepository;
+    public CommentService(CommentRepository commentRepository, PostRepository postRepository, 
+                         UserRepository userRepository, NotificationService notificationService) {
+        this.commentRepository = commentRepository;
         this.postRepository = postRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
     }
 
-    public String likePost(int postID, int userID, Like like) {
+    public String addComment(int postID, int userID, Comment comment) {
         Optional<Post> postOpt = postRepository.findById(postID);
         Optional<User> userOpt = userRepository.findById(userID);
 
@@ -37,24 +38,20 @@ public class LikeService {
             Post post = postOpt.get();
             User user = userOpt.get();
 
-            if (likeRepository.findByPostAndUser(post, user).isPresent()) {
-                return "Error: User already liked this post!";
-            }
-
-            like.setPost(post);
-            like.setUser(user);
-            like.setTimestamp(LocalDateTime.now());
-            likeRepository.save(like);
+            comment.setPost(post);
+            comment.setUser(user);
+            comment.setTimestamp(LocalDateTime.now());
+            commentRepository.save(comment);
 
             notificationService.createNotification(post.getUser(), 
-                user.getUsername() + " liked your post: " + post.getContent());
+                user.getUsername() + " commented on your post: " + comment.getCommentText());
 
-            return "Post liked successfully!";
+            return "Comment added successfully!";
         }
         return "Error: Post or User not found!";
     }
 
-    public long getLikeCount(int postID) {
-        return likeRepository.countByPost_PostID(postID);
+    public List<Comment> getCommentsByPostId(int postID) {
+        return commentRepository.findByPost_PostID(postID);
     }
 }

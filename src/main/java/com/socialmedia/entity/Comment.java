@@ -4,12 +4,12 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "Likes")
-public class Like {
+@Table(name = "Comments")
+public class Comment {
 
     @Id
-    @Column(name = "likeID")
-    private int likeID;
+    @Column(name = "commentID")
+    private int commentID;
 
     @ManyToOne
     @JoinColumn(name = "postID", nullable = false)
@@ -19,25 +19,29 @@ public class Like {
     @JoinColumn(name = "userID", nullable = false)
     private User user;
 
+    @Column(name = "comment_text", columnDefinition = "TEXT")
+    private String commentText;
+
     @Column(name = "timestamp")
     private LocalDateTime timestamp;
 
-    public Like() {
+    public Comment() {
     }
 
-    public Like(int likeID, Post post, User user, LocalDateTime timestamp) {
-        this.likeID = likeID;
+    public Comment(int commentID, Post post, User user, String commentText, LocalDateTime timestamp) {
+        this.commentID = commentID;
         this.post = post;
         this.user = user;
+        this.commentText = commentText;
         this.timestamp = timestamp;
     }
 
-    public int getLikeID() {
-        return likeID;
+    public int getCommentID() {
+        return commentID;
     }
 
-    public void setLikeID(int likeID) {
-        this.likeID = likeID;
+    public void setCommentID(int commentID) {
+        this.commentID = commentID;
     }
 
     public Post getPost() {
@@ -54,6 +58,14 @@ public class Like {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public String getCommentText() {
+        return commentText;
+    }
+
+    public void setCommentText(String commentText) {
+        this.commentText = commentText;
     }
 
     public LocalDateTime getTimestamp() {
