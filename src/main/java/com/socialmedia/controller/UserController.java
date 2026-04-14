@@ -18,21 +18,19 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public String register(@RequestBody User user) {
+    public String registerUser(@RequestBody User user) {
         return userService.registerUser(user);
     }
 
     @PostMapping("/login")
-    public java.util.Map<String, String> login(@RequestParam String username, @RequestParam String password) {
+    public java.util.Map<String, String> loginUser(@RequestParam String username, @RequestParam String password) {
         String token = userService.loginUser(username, password);
         java.util.Map<String, String> response = new java.util.HashMap<>();
         response.put("token", token);
         return response;
     }
 
-    public interface UserService {
-    List<User> getAllUsers();
-}
+  
 
     @GetMapping("/{userId}")
     public User getUserById(@PathVariable int userId) {
