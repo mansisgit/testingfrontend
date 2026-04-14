@@ -2,14 +2,13 @@ package com.socialmedia.service;
 
 import com.socialmedia.entity.Friendship;
 import com.socialmedia.entity.FriendshipStatus;
+import com.socialmedia.entity.Notification;
 import com.socialmedia.entity.User;
 import com.socialmedia.repository.FriendshipRepository;
 import com.socialmedia.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class FriendshipService {
@@ -18,61 +17,110 @@ public class FriendshipService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    @Autowired
-    public FriendshipService(FriendshipRepository friendshipRepository, UserRepository userRepository, NotificationService notificationService) {
+    public FriendshipService(FriendshipRepository friendshipRepository,
+                             UserRepository userRepository,
+                             NotificationService notificationService) {
         this.friendshipRepository = friendshipRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
     }
 
-    public String sendFriendRequest(int userID1, int userID2, int friendshipID) {
-        if (userID1 == userID2) {
-            return "Error: You cannot add yourself as a friend!";
+    public String sendFriendRequest(int friendshipID, int senderID, int receiverID) {
+
+        if (senderID == receiverID) {
+            return "Error: You cannot send a friend request to yourself!";
         }
 
-        Optional<User> user1Opt = userRepository.findById(userID1);
-        Optional<User> user2Opt = userRepository.findById(userID2);
-
-        if (user1Opt.isPresent() && user2Opt.isPresent()) {
-            User user1 = user1Opt.get();
-            User user2 = user2Opt.get();
-
-            // Check if friendship already exists
-            if (friendshipRepository.findByUser1AndUser2(user1, user2).isPresent() ||
-                friendshipRepository.findByUser1AndUser2(user2, user1).isPresent()) {
-                return "Error: Friendship or request already exists!";
-            }
-
-            Friendship friendship = new Friendship(friendshipID, user1, user2, FriendshipStatus.pending);
-            friendshipRepository.save(friendship);
-
-            // Auto-Notification
-            notificationService.createNotification(user2, 
-                user1.getUsername() + " sent you a friend request!");
-
-            return "Friend request sent!";
+        if (friendshipRepository.existsById(friendshipID)) {
+            return "Error: FriendshipID already exists, use a unique ID!";
         }
-        return "Error: One or both users not found!";
+
+        User sender = userRepository.findById(senderID)
+                .orElseThrow(() -> new RuntimeException("Sender not found with ID: " + senderID));
+
+        User receiver = userRepository.findById(receiverID)
+                .orElseThrow(() -> new RuntimeException("Receiver not found with ID: " + receiverID));
+
+        if (friendshipRepository.findByUser1AndUser2(sender, receiver).isPresent() ||
+            friendshipRepository.findByUser1AndUser2(receiver, sender).isPresent()) {
+            return "Error: A friendship or pending request already exists between these users!";
+        }
+
+        Friendship friendship = new Friendship();
+        friendship.setFriendshipID(friendshipID);
+        friendship.setUser1(sender);
+        friendship.setUser2(receiver);
+        friendship.setStatus(FriendshipStatus.pending);
+        friendshipRepository.save(friendship);
+
+        notificationService.createNotification(receiver,
+                sender.getUsername() + " sent you a friend request!");
+
+        return "Friend request sent successfully!";
     }
 
     public String acceptFriendRequest(int friendshipID) {
-        Optional<Friendship> friendshipOpt = friendshipRepository.findById(friendshipID);
-        if (friendshipOpt.isPresent()) {
-            Friendship friendship = friendshipOpt.get();
-            friendship.setStatus(FriendshipStatus.accepted);
-            friendshipRepository.save(friendship);
 
-            // Auto-Notification
-            notificationService.createNotification(friendship.getUser1(), 
+        Friendship friendship = friendshipRepository.findById(friendshipID)
+                .orElseThrow(() -> new RuntimeException("Friend request not found with ID: " + friendshipID));
+
+        if (friendship.getStatus() != FriendshipStatus.pending) {
+            return "Error: This request is not in pending state!";
+        }
+
+        friendship.setStatus(FriendshipStatus.accepted);
+        friendshipRepository.save(friendship);
+
+        notificationService.createNotification(friendship.getUser1(),
                 friendship.getUser2().getUsername() + " accepted your friend request!");
 
-            return "Friend request accepted!";
+        return "Friend request accepted successfully!";
+    }
+
+    public String rejectFriendRequest(int friendshipID) {
+
+        Friendship friendship = friendshipRepository.findById(friendshipID)
+                .orElseThrow(() -> new RuntimeException("Friend request not found with ID: " + friendshipID));
+
+        if (friendship.getStatus() != FriendshipStatus.pending) {
+            return "Error: Only pending requests can be rejected!";
         }
-        return "Error: Friendship request not found!";
+
+        friendshipRepository.delete(friendship);
+        return "Friend request rejected!";
     }
 
     public List<Friendship> getFriendsList(int userID) {
-        return friendshipRepository.findByUser1_UserIDOrUser2_UserID(userID, userID);
+        return friendshipRepository.findByUser1_UserIDOrUser2_UserIDAndStatus(
+                userID, userID, FriendshipStatus.accepted);
+    }
+
+    public List<Friendship> getIncomingRequests(int userID) {
+        return friendshipRepository.findByUser2_UserIDAndStatus(userID, FriendshipStatus.pending);
+    }
+
+    public List<Friendship> getOutgoingRequests(int userID) {
+        return friendshipRepository.findByUser1_UserIDAndStatus(userID, FriendshipStatus.pending);
+    }
+
+    public String checkStatus(int userID, int targetID) {
+
+        User user = userRepository.findById(userID)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userID));
+
+        User target = userRepository.findById(targetID)
+                .orElseThrow(() -> new RuntimeException("Target user not found with ID: " + targetID));
+
+        return friendshipRepository.findByUser1AndUser2(user, target)
+                .map(f -> "Status: " + f.getStatus().name())
+                .orElse(
+                    friendshipRepository.findByUser1AndUser2(target, user)
+                            .map(f -> "Status: " + f.getStatus().name())
+                            .orElse("No relationship found between these users")
+                );
+    }
+
+    public List<Notification> getFriendNotifications(int userID) {
+        return notificationService.getNotificationsForUser(userID);
     }
 }
-

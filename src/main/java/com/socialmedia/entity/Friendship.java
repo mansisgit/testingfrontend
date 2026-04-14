@@ -22,19 +22,9 @@ public class Friendship {
     @Column(nullable = false)
     private FriendshipStatus status;
 
-    
     public Friendship() {
     }
 
-  
-    public Friendship(int friendshipID, User user1, User user2, FriendshipStatus status) {
-        this.friendshipID = friendshipID;
-        this.user1 = user1;
-        this.user2 = user2;
-        this.status = status;
-    }
-
-  
     public int getFriendshipID() {
         return friendshipID;
     }
@@ -67,7 +57,3 @@ public class Friendship {
         this.status = status;
     }
 }
-
-
-
-

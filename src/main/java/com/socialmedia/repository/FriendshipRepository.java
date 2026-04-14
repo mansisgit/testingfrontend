@@ -11,12 +11,15 @@ import java.util.Optional;
 
 @Repository
 public interface FriendshipRepository extends JpaRepository<Friendship, Integer> {
-    
-    
-    Optional<Friendship> findByUser1AndUser2(User user1, User user2);
-      
-    List<Friendship> findByUser1_UserIDOrUser2_UserID(int userID1, int userID2); 
- 
-    boolean existsByUser1AndUser2AndStatus(User user1, User user2, FriendshipStatus status);
-}
 
+    Optional<Friendship> findByUser1AndUser2(User user1, User user2);
+
+    boolean existsByUser1AndUser2AndStatus(User user1, User user2, FriendshipStatus status);
+
+    List<Friendship> findByUser1_UserIDOrUser2_UserIDAndStatus(
+            int userID1, int userID2, FriendshipStatus status);
+
+    List<Friendship> findByUser2_UserIDAndStatus(int userID, FriendshipStatus status);
+
+    List<Friendship> findByUser1_UserIDAndStatus(int userID, FriendshipStatus status);
+}

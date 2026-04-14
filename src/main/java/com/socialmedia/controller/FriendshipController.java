@@ -1,37 +1,69 @@
 package com.socialmedia.controller;
 
+import com.socialmedia.dto.FriendRequestDto;
 import com.socialmedia.entity.Friendship;
+import com.socialmedia.entity.Notification;
 import com.socialmedia.service.FriendshipService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/friends")
+@RequestMapping("/api/v1/friendships")
 public class FriendshipController {
 
     private final FriendshipService friendshipService;
 
-    @Autowired
     public FriendshipController(FriendshipService friendshipService) {
         this.friendshipService = friendshipService;
     }
 
     @PostMapping("/request")
-    public String sendRequest(@RequestParam int senderID, @RequestParam int receiverID, @RequestParam int friendshipID) {
-        return friendshipService.sendFriendRequest(senderID, receiverID, friendshipID);
+    public ResponseEntity<String> sendRequest(@RequestBody FriendRequestDto dto) {
+        String response = friendshipService.sendFriendRequest(
+                dto.getFriendshipId(),
+                dto.getSenderId(),
+                dto.getReceiverId()
+        );
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
-    @PostMapping("/accept/{friendshipID}")
-    public String acceptRequest(@PathVariable int friendshipID) {
-        return friendshipService.acceptFriendRequest(friendshipID);
+    @PutMapping("/{friendshipID}/accept")
+    public ResponseEntity<String> acceptRequest(@PathVariable int friendshipID) {
+        return ResponseEntity.ok(friendshipService.acceptFriendRequest(friendshipID));
     }
 
-    @GetMapping("/list/{userID}")
-    public List<Friendship> getFriends(@PathVariable int userID) {
-        return friendshipService.getFriendsList(userID);
+    @PatchMapping("/{friendshipID}/reject")
+    public ResponseEntity<String> rejectRequest(@PathVariable int friendshipID) {
+        return ResponseEntity.ok(friendshipService.rejectFriendRequest(friendshipID));
+    }
+
+    @GetMapping("/{userID}/list")
+    public ResponseEntity<List<Friendship>> getFriendsList(@PathVariable int userID) {
+        return ResponseEntity.ok(friendshipService.getFriendsList(userID));
+    }
+
+    @GetMapping("/{userID}/requests/incoming")
+    public ResponseEntity<List<Friendship>> getIncomingRequests(@PathVariable int userID) {
+        return ResponseEntity.ok(friendshipService.getIncomingRequests(userID));
+    }
+
+    @GetMapping("/{userID}/requests/outgoing")
+    public ResponseEntity<List<Friendship>> getOutgoingRequests(@PathVariable int userID) {
+        return ResponseEntity.ok(friendshipService.getOutgoingRequests(userID));
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<String> checkStatus(
+            @RequestParam int userID,
+            @RequestParam int targetID) {
+        return ResponseEntity.ok(friendshipService.checkStatus(userID, targetID));
+    }
+
+    @GetMapping("/{userID}/notifications")
+    public ResponseEntity<List<Notification>> getFriendNotifications(@PathVariable int userID) {
+        return ResponseEntity.ok(friendshipService.getFriendNotifications(userID));
     }
 }
-
-
