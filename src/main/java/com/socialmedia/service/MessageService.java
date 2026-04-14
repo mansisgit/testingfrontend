@@ -67,4 +67,32 @@ public class MessageService {
         }
         return List.of();
     }
+
+    public List<Message> getInbox(int userID) {
+        return messageRepository.findByReceiver_UserIDOrderByTimestampDesc(userID);
+    }
+
+    public List<Message> getSent(int userID) {
+        return messageRepository.findBySender_UserIDOrderByTimestampDesc(userID);
+    }
+
+    public String deleteMessage(int messageID) {
+        if (messageRepository.existsById(messageID)) {
+            messageRepository.deleteById(messageID);
+            return "Message deleted successfully!";
+        }
+        return "Error: Message not found!";
+    }
+
+    public long countMessagesBetweenUsers(int user1ID, int user2ID) {
+        Optional<User> user1Opt = userRepository.findById(user1ID);
+        Optional<User> user2Opt = userRepository.findById(user2ID);
+
+        if (user1Opt.isPresent() && user2Opt.isPresent()) {
+            User u1 = user1Opt.get();
+            User u2 = user2Opt.get();
+            return messageRepository.countBySenderAndReceiver(u1, u2) + messageRepository.countBySenderAndReceiver(u2, u1);
+        }
+        return 0;
+    }
 }

@@ -31,4 +31,24 @@ public class MessageController {
     public List<Message> getConversation(@RequestParam int user1ID, @RequestParam int user2ID) {
         return messageService.getConversation(user1ID, user2ID);
     }
+
+    @GetMapping("/inbox/{userID}")
+    public List<Message> getInbox(@PathVariable int userID) {
+        return messageService.getInbox(userID);
+    }
+
+    @GetMapping("/sent/{userID}")
+    public List<Message> getSent(@PathVariable int userID) {
+        return messageService.getSent(userID);
+    }
+
+    @DeleteMapping("/{messageID}")
+    public String deleteMessage(@PathVariable int messageID) {
+        return messageService.deleteMessage(messageID);
+    }
+
+    @GetMapping("/count")
+    public long getMessageCount(@RequestParam int user1ID, @RequestParam int user2ID) {
+        return messageService.countMessagesBetweenUsers(user1ID, user2ID);
+    }
 }
