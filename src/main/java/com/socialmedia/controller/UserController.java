@@ -29,7 +29,11 @@ public class UserController {
         response.put("token", token);
         return response;
     }
-
+    
+    @GetMapping("/all")
+    public List<User> getAllUsers() {
+        return userService.getAllUsers();
+    }
   
 
     @GetMapping("/{userId}")
