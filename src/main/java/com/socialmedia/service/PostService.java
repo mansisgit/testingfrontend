@@ -44,18 +44,35 @@ public class PostService {
     public List<Post> getPostsByUserId(int userID) {
         return postRepository.findByUser_UserID(userID);
     }
+    
+    public List<Post> searchPosts(String keyword) {
+        return postRepository.findByContentContainingIgnoreCase(keyword);
+    }
+    
+    public Post getPostById(int postId) {
+        return postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+    }
+    
+    public Post updatePost(int postId, Post updatedPost) {
+        Post existingPost = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+        existingPost.setContent(updatedPost.getContent());
+              return postRepository.save(existingPost);
+    }
+    
 
     public PostFeedResponse getPaginatedFeed(Integer seed, int page, int limit) {
-        // Generate new seed if not provided
-        int resolvedSeed = (seed == null) ? new Random().nextInt(100000) : seed;
+        
+    	int resolvedSeed = (seed == null) ? new Random().nextInt(100000) : seed;
 
-        // Fetch ALL posts
+        
         List<Post> allPosts = postRepository.findAll();
 
-        // Shuffle using the seed (consistent order for same seed)
+      
         Collections.shuffle(allPosts, new Random(resolvedSeed));
 
-        // Manual pagination
+        
         int fromIndex = page * limit;
         int toIndex = Math.min(fromIndex + limit, allPosts.size());
 

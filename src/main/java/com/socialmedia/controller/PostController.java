@@ -34,6 +34,21 @@ public class PostController {
     public List<Post> getPostsByUserId(@PathVariable int userID) {
         return postService.getPostsByUserId(userID);
     }
+    
+    @GetMapping("/search")
+    public List<Post> searchPosts(@RequestParam String keyword) {
+        return postService.searchPosts(keyword);
+    }
+    
+    @GetMapping("/{postId}")
+    public Post getPostById(@PathVariable int postId) {
+        return postService.getPostById(postId);
+    }
+    
+    @PutMapping("/id/{postId}")
+    public Post updatePost(@PathVariable int postId, @RequestBody Post post) {
+        return postService.updatePost(postId, post);
+    }
 
     @GetMapping("/feed")
     public ResponseEntity<PostFeedResponse> getFeed(

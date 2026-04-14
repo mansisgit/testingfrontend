@@ -10,4 +10,5 @@ import java.util.List;
 public interface PostRepository extends JpaRepository<Post, Integer> {
 
     List<Post> findByUser_UserID(int userID);
+    List<Post> findByContentContainingIgnoreCase(String keyword);
 }
