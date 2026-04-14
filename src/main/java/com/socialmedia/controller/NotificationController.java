@@ -3,15 +3,11 @@ package com.socialmedia.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.socialmedia.entity.Notification;
 import com.socialmedia.service.NotificationService;
 
-// Controller for handling notification-related endpoints
 @RestController
 @RequestMapping("/api/notifications")
 public class NotificationController {
@@ -24,7 +20,29 @@ public class NotificationController {
     }
 
     @GetMapping("/user/{userID}")
-    public List<Notification> getNotifications(@PathVariable int userID) {
-        return notificationService.getNotificationsForUser(userID);
+    public List<Notification> getUserNotifications(@PathVariable int userID) {
+        return notificationService.getUserNotifications(userID);
+    }
+
+    @PostMapping("/create")
+    public String createNotification(
+            @RequestParam int userID, 
+            @RequestParam String content) {
+        return notificationService.createNotification(userID, content);
+    }
+
+    @GetMapping("/{notificationID}")
+    public Notification getNotification(@PathVariable int notificationID) {
+        return notificationService.getNotification(notificationID);
+    }
+
+    @GetMapping("/count/{userID}")
+    public long countNotifications(@PathVariable int userID) {
+        return notificationService.countNotifications(userID);
+    }
+
+    @DeleteMapping("/{notificationID}")
+    public String deleteNotification(@PathVariable int notificationID) {
+        return notificationService.deleteNotification(notificationID);
     }
 }

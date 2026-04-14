@@ -14,4 +14,10 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     List<Message> findBySenderAndReceiverOrReceiverAndSenderOrderByTimestampAsc(
         User sender1, User receiver1, User sender2, User receiver2
     );
+
+    List<Message> findByReceiver_UserIDOrderByTimestampDesc(int userID);
+
+    List<Message> findBySender_UserIDOrderByTimestampDesc(int userID);
+
+    long countBySenderAndReceiver(User sender, User receiver);
 }

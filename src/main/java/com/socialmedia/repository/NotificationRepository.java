@@ -10,4 +10,5 @@ import com.socialmedia.entity.Notification;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Integer> {
     List<Notification> findByUser_UserIDOrderByTimestampDesc(int userID);
+    long countByUser_UserID(int userID);
 }
