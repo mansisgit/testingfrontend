@@ -123,4 +123,63 @@ public class FriendshipService {
     public List<Notification> getFriendNotifications(int userID) {
         return notificationService.getNotificationsForUser(userID);
     }
+
+
+    public long getFriendCount(int userID) {
+        return getFriendsList(userID).size();
+    }
+
+    public boolean areFriends(int userID, int targetID) {
+        User user = userRepository.findById(userID)
+                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userID));
+        User target = userRepository.findById(targetID)
+                .orElseThrow(() -> new RuntimeException("Target user not found with ID: " + targetID));
+
+        return friendshipRepository.existsByUser1AndUser2AndStatus(user, target, FriendshipStatus.accepted) ||
+               friendshipRepository.existsByUser1AndUser2AndStatus(target, user, FriendshipStatus.accepted);
+    }
+
+    public List<User> getMutualFriends(int userID, int targetID) {
+        List<Friendship> userFriends = getFriendsList(userID);
+        List<Friendship> targetFriends = getFriendsList(targetID);
+
+        // Extract User objects for userID's friends
+        List<User> userFriendList = userFriends.stream()
+                .map(f -> f.getUser1().getUserID() == userID ? f.getUser2() : f.getUser1())
+                .toList();
+
+        // Extract User objects for targetID's friends
+        List<User> targetFriendList = targetFriends.stream()
+                .map(f -> f.getUser1().getUserID() == targetID ? f.getUser2() : f.getUser1())
+                .toList();
+
+        // Find intersection
+        return userFriendList.stream()
+                .filter(u -> targetFriendList.stream().anyMatch(t -> t.getUserID() == u.getUserID()))
+                .toList();
+    }
+
+    public List<User> getFriendRecommendations(int userID) {
+        // Find existing friends
+        List<Friendship> accepted = getFriendsList(userID);
+        
+        // Find pending requests
+        List<Friendship> pendingIncoming = getIncomingRequests(userID);
+        List<Friendship> pendingOutgoing = getOutgoingRequests(userID);
+
+        List<Integer> excludedUserIDs = new java.util.ArrayList<>();
+        excludedUserIDs.add(userID); // Exclude self
+
+        // Add accepted friends to exclusion list
+        accepted.forEach(f -> excludedUserIDs.add(f.getUser1().getUserID() == userID ? f.getUser2().getUserID() : f.getUser1().getUserID()));
+        // Add pending relationships to exclusion list
+        pendingIncoming.forEach(f -> excludedUserIDs.add(f.getUser1().getUserID()));
+        pendingOutgoing.forEach(f -> excludedUserIDs.add(f.getUser2().getUserID()));
+
+        // Get all users, filter out excluded, and limit to 10 suggestions
+        return userRepository.findAll().stream()
+                .filter(u -> !excludedUserIDs.contains(u.getUserID()))
+                .limit(10)
+                .toList();
+    }
 }

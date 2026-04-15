@@ -3,6 +3,7 @@ package com.socialmedia.controller;
 import com.socialmedia.dto.FriendRequestDto;
 import com.socialmedia.entity.Friendship;
 import com.socialmedia.entity.Notification;
+import com.socialmedia.entity.User;
 import com.socialmedia.service.FriendshipService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -65,5 +66,29 @@ public class FriendshipController {
     @GetMapping("/{userID}/notifications")
     public ResponseEntity<List<Notification>> getFriendNotifications(@PathVariable int userID) {
         return ResponseEntity.ok(friendshipService.getFriendNotifications(userID));
+    }
+
+    @GetMapping("/{userID}/count")
+    public ResponseEntity<Long> getFriendCount(@PathVariable int userID) {
+        return ResponseEntity.ok(friendshipService.getFriendCount(userID));
+    }
+
+    @GetMapping("/are-friends")
+    public ResponseEntity<Boolean> areFriends(
+            @RequestParam int user1Id,
+            @RequestParam int user2Id) {
+        return ResponseEntity.ok(friendshipService.areFriends(user1Id, user2Id));
+    }
+
+    @GetMapping("/{userID}/mutual/{targetID}")
+    public ResponseEntity<List<User>> getMutualFriends(
+            @PathVariable int userID,
+            @PathVariable int targetID) {
+        return ResponseEntity.ok(friendshipService.getMutualFriends(userID, targetID));
+    }
+
+    @GetMapping("/{userID}/suggestions")
+    public ResponseEntity<List<User>> getFriendRecommendations(@PathVariable int userID) {
+        return ResponseEntity.ok(friendshipService.getFriendRecommendations(userID));
     }
 }
