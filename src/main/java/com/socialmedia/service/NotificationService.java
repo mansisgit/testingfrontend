@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 
 import com.socialmedia.entity.Notification;
 import com.socialmedia.entity.User;
+import com.socialmedia.exception.GlobalExceptionHandler.*;
+import com.socialmedia.exception.GlobalExceptionHandler.ResourceNotFoundException;
+import com.socialmedia.exception.GlobalExceptionHandler.UserNotFoundException;
 import com.socialmedia.repository.NotificationRepository;
 import com.socialmedia.repository.UserRepository;
 
@@ -41,7 +44,7 @@ public class NotificationService {
             createNotification(userOpt.get(), content);
             return "Notification created successfully!";
         }
-        return "Error: User not found!";
+        throw new UserNotFoundException("Error: User not found!");
     }
 
     // Backward compatibility for existing services calling createNotification(User, String)
@@ -58,7 +61,8 @@ public class NotificationService {
     }
 
     public Notification getNotification(int notificationID) {
-        return notificationRepository.findById(notificationID).orElse(null);
+        return notificationRepository.findById(notificationID)
+                .orElseThrow(() -> new ResourceNotFoundException("Notification not found!"));
     }
 
     public long countNotifications(int userID) {
@@ -70,6 +74,6 @@ public class NotificationService {
             notificationRepository.deleteById(notificationID);
             return "Notification deleted successfully!";
         }
-        return "Error: Notification not found!";
+        throw new ResourceNotFoundException("Error: Notification not found!");
     }
 }
