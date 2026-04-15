@@ -32,6 +32,31 @@ public class GroupController {
     public List<SocialGroup> searchGroups(@RequestParam String name) {
         return groupService.searchGroups(name);
     }
-}
+
+    @GetMapping("/{groupID}")
+    public SocialGroup getGroupById(@PathVariable int groupID) {
+        return groupService.getGroupById(groupID);
+    }
+
+    @GetMapping
+    public List<SocialGroup> getAllGroups() {
+        return groupService.getAllGroups();
+    }
+
+    @GetMapping("/admin/{adminID}/count")
+    public long countGroupsByAdmin(@PathVariable int adminID) {
+        return groupService.countGroupsByAdmin(adminID);
+    }
+
+    @PutMapping("/{groupID}")
+    public SocialGroup updateGroupName(@PathVariable int groupID, @RequestParam String newName) {
+        return groupService.updateGroupName(groupID, newName);
+    }
+
+    @GetMapping("/user/{userID}")
+    public List<SocialGroup> getGroupsByUser(@PathVariable int userID) {
+        return groupService.getGroupsByUser(userID);
+    }
+} 
 
 
