@@ -6,6 +6,7 @@ import com.socialmedia.entity.User;
 import com.socialmedia.repository.LikeRepository;
 import com.socialmedia.repository.PostRepository;
 import com.socialmedia.repository.UserRepository;
+import com.socialmedia.exception.GlobalExceptionHandler.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +40,7 @@ public class LikeService {
             User user = userOpt.get();
 
             if (likeRepository.findByPostAndUser(post, user).isPresent()) {
-                return "Error: User already liked this post!";
+                throw new DuplicateResourceException("Error: User already liked this post!");
             }
 
             like.setPost(post);
@@ -52,7 +53,7 @@ public class LikeService {
 
             return "Post liked successfully!";
         }
-        return "Error: Post or User not found!";
+        throw new ResourceNotFoundException("Error: Post or User not found!");
     }
 
     public long getLikeCount(int postID) {
@@ -74,10 +75,10 @@ public class LikeService {
                 likeRepository.deleteByPostAndUser(post, user);
                 return "Like removed successfully!";
             } else {
-                return "Error: Like does not exist!";
+                throw new ResourceNotFoundException("Error: Like does not exist!");
             }
         }
-        return "Error: Post or User not found!";
+        throw new ResourceNotFoundException("Error: Post or User not found!");
     }
     
     public boolean isPostLikedByUser(int postID, int userID) {
@@ -116,7 +117,7 @@ public class LikeService {
                 return "Post liked!";
             }
         }
-        return "Error: Post or User not found!";
+        throw new ResourceNotFoundException("Error: Post or User not found!");
     }
     
     public long getTotalLikesByUser(int userID) {
@@ -139,7 +140,7 @@ public class LikeService {
     
     public Like getLikeById(int likeID) {
         return likeRepository.findById(likeID)
-                .orElseThrow(() -> new RuntimeException("Like not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Like not found!"));
     }
 
     public boolean checkUserLikeOnPost(int postID, int userID) {
@@ -158,9 +159,9 @@ public class LikeService {
 
         if (postOpt.isPresent() && userOpt.isPresent()) {
             return likeRepository.findByPostAndUser(postOpt.get(), userOpt.get())
-                    .orElseThrow(() -> new RuntimeException("Like not found!"));
+                    .orElseThrow(() -> new ResourceNotFoundException("Like not found!"));
         }
 
-        throw new RuntimeException("Post or User not found!");
+        throw new ResourceNotFoundException("Post or User not found!");
     }
 }

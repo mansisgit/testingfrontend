@@ -6,6 +6,7 @@ import com.socialmedia.entity.User;
 import com.socialmedia.repository.CommentRepository;
 import com.socialmedia.repository.PostRepository;
 import com.socialmedia.repository.UserRepository;
+import com.socialmedia.exception.GlobalExceptionHandler.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -48,7 +49,7 @@ public class CommentService {
 
             return "Comment added successfully!";
         }
-        return "Error: Post or User not found!";
+        throw new ResourceNotFoundException("Error: Post or User not found!");
     }
 
     public List<Comment> getCommentsByPostId(int postID) {
@@ -61,7 +62,7 @@ public class CommentService {
     
     public Comment getCommentById(int commentID) {
         return commentRepository.findById(commentID)
-                .orElseThrow(() -> new RuntimeException("Comment not found!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Comment not found!"));
     }
     
     public List<Comment> getCommentsByUser(int userID) {
@@ -73,7 +74,7 @@ public class CommentService {
             commentRepository.deleteById(commentID);
             return "Comment deleted successfully!";
         } else {
-            return "Error: Comment not found!";
+            throw new ResourceNotFoundException("Error: Comment not found!");
         }
     }
     
@@ -90,7 +91,7 @@ public class CommentService {
             return "Comment updated successfully!";
         }
 
-        return "Error: Comment not found!";
+        throw new ResourceNotFoundException("Error: Comment not found!");
     }
     
     public long getCommentCountByPost(int postID) {
