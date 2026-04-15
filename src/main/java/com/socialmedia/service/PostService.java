@@ -5,6 +5,7 @@ import com.socialmedia.entity.Post;
 import com.socialmedia.entity.User;
 import com.socialmedia.repository.PostRepository;
 import com.socialmedia.repository.UserRepository;
+import com.socialmedia.exception.GlobalExceptionHandler.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,7 +35,7 @@ public class PostService {
             postRepository.save(post);
             return "Post created successfully!";
         }
-        return "Error: User not found!";
+        throw new UserNotFoundException("Error: User not found!");
     }
 
     public List<Post> getAllPosts() {
@@ -51,12 +52,12 @@ public class PostService {
     
     public Post getPostById(int postId) {
         return postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with ID: " + postId));
     }
     
     public Post updatePost(int postId, Post updatedPost) {
         Post existingPost = postRepository.findById(postId)
-                .orElseThrow(() -> new RuntimeException("Post not found with ID: " + postId));
+                .orElseThrow(() -> new ResourceNotFoundException("Post not found with ID: " + postId));
         existingPost.setContent(updatedPost.getContent());
               return postRepository.save(existingPost);
     }

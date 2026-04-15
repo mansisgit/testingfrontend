@@ -2,6 +2,7 @@ package com.socialmedia.service;
 
 import com.socialmedia.entity.User;
 import com.socialmedia.repository.UserRepository;
+import com.socialmedia.exception.GlobalExceptionHandler.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +23,10 @@ public class UserService {
 
     public String registerUser(User user) {
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("Error: Username is already taken!");
+            throw new DuplicateResourceException("Error: Username is already taken!");
         }
         if (userRepository.findByEmail(user.getEmail()).isPresent()) {
-            throw new RuntimeException("Error: Email is already registered!");
+            throw new DuplicateResourceException("Error: Email is already registered!");
         }
         userRepository.save(user);
         return "User registered successfully!";
@@ -39,10 +40,10 @@ public class UserService {
                 // Return JWT token on successful login
                 return jwtUtils.generateToken(username);
             } else {
-                throw new RuntimeException("Error: Invalid password!");
+                throw new InvalidCredentialsException("Error: Invalid password!");
             }
         }
-        throw new RuntimeException("Error: User not found!");
+        throw new UserNotFoundException("Error: User not found!");
     }
 
      public List<User> getAllUsers() {
@@ -51,7 +52,7 @@ public class UserService {
 
     public User getUserById(int userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Error: User not found with ID: " + userId));
+                .orElseThrow(() -> new UserNotFoundException("Error: User not found with ID: " + userId));
     }
 
     public User updateUser(int userId, User updatedUser) {
