@@ -2,6 +2,7 @@ package com.socialmedia.service;
 
 import com.socialmedia.entity.*;
 import com.socialmedia.repository.*;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -21,48 +22,175 @@ public class MessageServiceTest {
     @Mock MessageRepository msgRepo;
     @Mock UserRepository userRepo;
     @Mock FriendshipRepository friendRepo;
+
+    // ✅ NEW MOCK (VERY IMPORTANT)
+    @Mock NotificationService notificationService;
+
     @InjectMocks MessageService service;
 
-    // Minimal dummy objects configured concisely as class variables
-    User u1 = new User(1, "A", "a@email.com", "pass");
-    User u2 = new User(2, "B", "b@email.com", "pass");
-    Message msg = new Message();
+    private User u1;
+    private User u2;
+    private Message msg;
+
+    @BeforeEach
+    void setUp() {
+        u1 = new User(1, "A", "a@email.com", "pass");
+        u2 = new User(2, "B", "b@email.com", "pass");
+        msg = new Message();
+    }
+
+    // ─── sendMessage ────────────────────────────────────────────────────────────
 
     @Test
-    void testSendMessage() {
+    void testSendMessage_Success() {
         when(userRepo.findById(1)).thenReturn(Optional.of(u1));
         when(userRepo.findById(2)).thenReturn(Optional.of(u2));
         when(friendRepo.existsByUser1AndUser2AndStatus(u1, u2, FriendshipStatus.accepted)).thenReturn(true);
 
-        assertEquals("Message sent successfully!", service.sendMessage(1, 2, 100, "Hi"));
-        verify(msgRepo).save(any(Message.class)); 
+        String result = service.sendMessage(1, 2, 100, "Hi");
+
+        assertEquals("Message sent successfully!", result);
+        verify(msgRepo, times(1)).save(any(Message.class));
+
+        // ✅ NEW ASSERTION (IMPORTANT)
+        verify(notificationService).createNotification(2, "New message from " + u1.getUsername());
     }
 
     @Test
-    void testGetMessages() {
-        // Combines verification of all basic READ operations
+    void testSendMessage_NotFriends() {
+        when(userRepo.findById(1)).thenReturn(Optional.of(u1));
+        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+        when(friendRepo.existsByUser1AndUser2AndStatus(u1, u2, FriendshipStatus.accepted)).thenReturn(false);
+        when(friendRepo.existsByUser1AndUser2AndStatus(u2, u1, FriendshipStatus.accepted)).thenReturn(false);
+
+        String result = service.sendMessage(1, 2, 100, "Hi");
+
+        assertEquals("Error: You can only message your friends!", result);
+        verify(msgRepo, never()).save(any());
+
+        // ✅ Notification should NOT be called
+        verify(notificationService, never()).createNotification(anyInt(), anyString());
+    }
+
+    @Test
+    void testSendMessage_FriendsViaReverseDirection() {
+        when(userRepo.findById(1)).thenReturn(Optional.of(u1));
+        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+        when(friendRepo.existsByUser1AndUser2AndStatus(u1, u2, FriendshipStatus.accepted)).thenReturn(false);
+        when(friendRepo.existsByUser1AndUser2AndStatus(u2, u1, FriendshipStatus.accepted)).thenReturn(true);
+
+        String result = service.sendMessage(1, 2, 100, "Hello");
+
+        assertEquals("Message sent successfully!", result);
+        verify(msgRepo).save(any(Message.class));
+
+        // ✅ Notification check
+        verify(notificationService).createNotification(2, "New message from " + u1.getUsername());
+    }
+
+    @Test
+    void testSendMessage_SenderNotFound() {
+        when(userRepo.findById(1)).thenReturn(Optional.empty());
+        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+
+        String result = service.sendMessage(1, 2, 100, "Hi");
+
+        assertEquals("Error: Sender or Receiver not found!", result);
+        verify(msgRepo, never()).save(any());
+        verify(notificationService, never()).createNotification(anyInt(), anyString());
+    }
+
+    @Test
+    void testSendMessage_ReceiverNotFound() {
+        when(userRepo.findById(1)).thenReturn(Optional.of(u1));
+        when(userRepo.findById(2)).thenReturn(Optional.empty());
+
+        String result = service.sendMessage(1, 2, 100, "Hi");
+
+        assertEquals("Error: Sender or Receiver not found!", result);
+        verify(msgRepo, never()).save(any());
+        verify(notificationService, never()).createNotification(anyInt(), anyString());
+    }
+
+    // ─── getInbox / getSent / getConversation ───────────────────────────────────
+
+    @Test
+    void testGetInbox() {
         when(msgRepo.findByReceiver_UserIDOrderByTimestampDesc(2)).thenReturn(List.of(msg));
-        when(msgRepo.findBySender_UserIDOrderByTimestampDesc(1)).thenReturn(List.of(msg));
-        when(msgRepo.findBySenderAndReceiverOrReceiverAndSenderOrderByTimestampAsc(u1, u2, u1, u2)).thenReturn(List.of(msg));
 
-        when(userRepo.findById(1)).thenReturn(Optional.of(u1));
-        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+        List<Message> inbox = service.getInbox(2);
 
-        assertEquals(1, service.getInbox(2).size());
-        assertEquals(1, service.getSent(1).size());
-        assertEquals(1, service.getConversation(1, 2).size());
+        assertEquals(1, inbox.size());
+        verify(msgRepo).findByReceiver_UserIDOrderByTimestampDesc(2);
     }
 
     @Test
-    void testDeleteAndCount() {
-        // Delete Check
-        when(msgRepo.existsById(100)).thenReturn(true);
-        assertEquals("Message deleted successfully!", service.deleteMessage(100));
+    void testGetSent() {
+        when(msgRepo.findBySender_UserIDOrderByTimestampDesc(1)).thenReturn(List.of(msg));
 
-        // Count Check
+        List<Message> sent = service.getSent(1);
+
+        assertEquals(1, sent.size());
+        verify(msgRepo).findBySender_UserIDOrderByTimestampDesc(1);
+    }
+
+    @Test
+    void testGetConversation_Success() {
         when(userRepo.findById(1)).thenReturn(Optional.of(u1));
         when(userRepo.findById(2)).thenReturn(Optional.of(u2));
-        when(msgRepo.countBySenderAndReceiver(any(), any())).thenReturn(5L);
-        assertEquals(10L, service.countMessagesBetweenUsers(1, 2));
+        when(msgRepo.findBySenderAndReceiverOrReceiverAndSenderOrderByTimestampAsc(u1, u2, u1, u2))
+                .thenReturn(List.of(msg));
+
+        List<Message> convo = service.getConversation(1, 2);
+
+        assertEquals(1, convo.size());
+    }
+
+    @Test
+    void testGetConversation_UserNotFound_ReturnsEmpty() {
+        when(userRepo.findById(1)).thenReturn(Optional.empty());
+        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+
+        List<Message> convo = service.getConversation(1, 2);
+
+        assertTrue(convo.isEmpty());
+    }
+
+    // ─── deleteMessage ──────────────────────────────────────────────────────────
+
+    @Test
+    void testDeleteMessage_Success() {
+        when(msgRepo.existsById(100)).thenReturn(true);
+
+        assertEquals("Message deleted successfully!", service.deleteMessage(100));
+        verify(msgRepo).deleteById(100);
+    }
+
+    @Test
+    void testDeleteMessage_NotFound() {
+        when(msgRepo.existsById(999)).thenReturn(false);
+
+        assertEquals("Error: Message not found!", service.deleteMessage(999));
+        verify(msgRepo, never()).deleteById(anyInt());
+    }
+
+    // ─── countMessagesBetweenUsers ──────────────────────────────────────────────
+
+    @Test
+    void testCountMessages_Success() {
+        when(userRepo.findById(1)).thenReturn(Optional.of(u1));
+        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+        when(msgRepo.countBySenderAndReceiver(u1, u2)).thenReturn(3L);
+        when(msgRepo.countBySenderAndReceiver(u2, u1)).thenReturn(2L);
+
+        assertEquals(5L, service.countMessagesBetweenUsers(1, 2));
+    }
+
+    @Test
+    void testCountMessages_UserNotFound_ReturnsZero() {
+        when(userRepo.findById(1)).thenReturn(Optional.empty());
+        when(userRepo.findById(2)).thenReturn(Optional.of(u2));
+
+        assertEquals(0L, service.countMessagesBetweenUsers(1, 2));
     }
 }
