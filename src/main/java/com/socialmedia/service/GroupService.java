@@ -1,9 +1,12 @@
+
+
 package com.socialmedia.service;
 
 import com.socialmedia.entity.SocialGroup;
 import com.socialmedia.entity.User;
 import com.socialmedia.repository.GroupRepository;
 import com.socialmedia.repository.UserRepository;
+import com.socialmedia.exception.GlobalExceptionHandler.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +33,7 @@ public class GroupService {
             groupRepository.save(group);
             return "Group '" + group.getGroupName() + "' created successfully!";
         }
-        return "Error: Admin user not found!";
+        throw new UserNotFoundException("Error: Admin user not found!");
     }
 
     public List<SocialGroup> getGroupsByAdmin(int adminID) {
@@ -42,7 +45,8 @@ public class GroupService {
     }
 
     public SocialGroup getGroupById(int groupID) {
-        return groupRepository.findById(groupID).orElse(null);
+        return groupRepository.findById(groupID)
+                .orElseThrow(() -> new ResourceNotFoundException("Group not found with ID: " + groupID));
     }
 
     public List<SocialGroup> getAllGroups() {
@@ -60,7 +64,7 @@ public class GroupService {
             group.setGroupName(newName);
             return groupRepository.save(group);
         }
-        return null; 
+        throw new ResourceNotFoundException("Error: Group not found!");
     }
 
     public List<SocialGroup> getGroupsByUser(int userID) {
