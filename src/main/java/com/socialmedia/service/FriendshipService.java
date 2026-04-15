@@ -1,14 +1,20 @@
 package com.socialmedia.service;
 
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
 import com.socialmedia.entity.Friendship;
 import com.socialmedia.entity.FriendshipStatus;
 import com.socialmedia.entity.Notification;
 import com.socialmedia.entity.User;
+import com.socialmedia.exception.GlobalExceptionHandler;
+import com.socialmedia.exception.GlobalExceptionHandler.BadRequestException;
+import com.socialmedia.exception.GlobalExceptionHandler.DuplicateResourceException;
+import com.socialmedia.exception.GlobalExceptionHandler.ResourceNotFoundException;
+import com.socialmedia.exception.GlobalExceptionHandler.UserNotFoundException;
 import com.socialmedia.repository.FriendshipRepository;
 import com.socialmedia.repository.UserRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class FriendshipService {
@@ -28,22 +34,22 @@ public class FriendshipService {
     public String sendFriendRequest(int friendshipID, int senderID, int receiverID) {
 
         if (senderID == receiverID) {
-            return "Error: You cannot send a friend request to yourself!";
+            throw new BadRequestException("Error: You cannot send a friend request to yourself!");
         }
 
         if (friendshipRepository.existsById(friendshipID)) {
-            return "Error: FriendshipID already exists, use a unique ID!";
+            throw new DuplicateResourceException("Error: FriendshipID already exists, use a unique ID!");
         }
 
         User sender = userRepository.findById(senderID)
-                .orElseThrow(() -> new RuntimeException("Sender not found with ID: " + senderID));
+                .orElseThrow(() -> new UserNotFoundException("Sender not found with ID: " + senderID));
 
         User receiver = userRepository.findById(receiverID)
-                .orElseThrow(() -> new RuntimeException("Receiver not found with ID: " + receiverID));
+                .orElseThrow(() -> new UserNotFoundException("Receiver not found with ID: " + receiverID));
 
         if (friendshipRepository.findByUser1AndUser2(sender, receiver).isPresent() ||
             friendshipRepository.findByUser1AndUser2(receiver, sender).isPresent()) {
-            return "Error: A friendship or pending request already exists between these users!";
+            throw new DuplicateResourceException("Error: A friendship or pending request already exists between these users!");
         }
 
         Friendship friendship = new Friendship();
@@ -62,10 +68,10 @@ public class FriendshipService {
     public String acceptFriendRequest(int friendshipID) {
 
         Friendship friendship = friendshipRepository.findById(friendshipID)
-                .orElseThrow(() -> new RuntimeException("Friend request not found with ID: " + friendshipID));
+                .orElseThrow(() -> new ResourceNotFoundException("Friend request not found with ID: " + friendshipID));
 
         if (friendship.getStatus() != FriendshipStatus.pending) {
-            return "Error: This request is not in pending state!";
+            throw new BadRequestException("Error: This request is not in pending state!");
         }
 
         friendship.setStatus(FriendshipStatus.accepted);
@@ -80,10 +86,10 @@ public class FriendshipService {
     public String rejectFriendRequest(int friendshipID) {
 
         Friendship friendship = friendshipRepository.findById(friendshipID)
-                .orElseThrow(() -> new RuntimeException("Friend request not found with ID: " + friendshipID));
+                .orElseThrow(() -> new ResourceNotFoundException("Friend request not found with ID: " + friendshipID));
 
         if (friendship.getStatus() != FriendshipStatus.pending) {
-            return "Error: Only pending requests can be rejected!";
+            throw new BadRequestException("Error: Only pending requests can be rejected!");
         }
 
         friendshipRepository.delete(friendship);
@@ -106,10 +112,10 @@ public class FriendshipService {
     public String checkStatus(int userID, int targetID) {
 
         User user = userRepository.findById(userID)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userID));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userID));
 
         User target = userRepository.findById(targetID)
-                .orElseThrow(() -> new RuntimeException("Target user not found with ID: " + targetID));
+                .orElseThrow(() -> new UserNotFoundException("Target user not found with ID: " + targetID));
 
         return friendshipRepository.findByUser1AndUser2(user, target)
                 .map(f -> "Status: " + f.getStatus().name())
@@ -131,9 +137,9 @@ public class FriendshipService {
 
     public boolean areFriends(int userID, int targetID) {
         User user = userRepository.findById(userID)
-                .orElseThrow(() -> new RuntimeException("User not found with ID: " + userID));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userID));
         User target = userRepository.findById(targetID)
-                .orElseThrow(() -> new RuntimeException("Target user not found with ID: " + targetID));
+                .orElseThrow(() -> new UserNotFoundException("Target user not found with ID: " + targetID));
 
         return friendshipRepository.existsByUser1AndUser2AndStatus(user, target, FriendshipStatus.accepted) ||
                friendshipRepository.existsByUser1AndUser2AndStatus(target, user, FriendshipStatus.accepted);
@@ -159,13 +165,71 @@ public class FriendshipService {
                 .toList();
     }
 
-    public List<User> searchFriends(int userID, String query) {
-        List<Friendship> friends = getFriendsList(userID);
-        String lowerQuery = query.toLowerCase();
+    public List<User> getFriendRecommendations(int userID) {
+        // Find existing friends
+        List<Friendship> accepted = getFriendsList(userID);
+        
+        // Find pending requests
+        List<Friendship> pendingIncoming = getIncomingRequests(userID);
+        List<Friendship> pendingOutgoing = getOutgoingRequests(userID);
 
-        return friends.stream()
-                .map(f -> f.getUser1().getUserID() == userID ? f.getUser2() : f.getUser1())
-                .filter(u -> u.getUsername().toLowerCase().contains(lowerQuery))
+        List<Integer> excludedUserIDs = new java.util.ArrayList<>();
+        excludedUserIDs.add(userID); // Exclude self
+
+        // Add accepted friends to exclusion list
+        accepted.forEach(f -> excludedUserIDs.add(f.getUser1().getUserID() == userID ? f.getUser2().getUserID() : f.getUser1().getUserID()));
+        // Add pending relationships to exclusion list
+        pendingIncoming.forEach(f -> excludedUserIDs.add(f.getUser1().getUserID()));
+        pendingOutgoing.forEach(f -> excludedUserIDs.add(f.getUser2().getUserID()));
+
+        // Get all users, filter out excluded, and limit to 10 suggestions
+        return userRepository.findAll().stream()
+                .filter(u -> !excludedUserIDs.contains(u.getUserID()))
+                .limit(10)
                 .toList();
     }
+    public List<User> searchFriends(int userID, String query) {
+
+        if (query == null || query.trim().isEmpty()) {
+            throw new GlobalExceptionHandler.BadRequestException("Search query cannot be empty");
+        }
+
+        List<Friendship> friendships = getFriendsList(userID);
+
+        if (friendships == null || friendships.isEmpty()) {
+            throw new GlobalExceptionHandler.ResourceNotFoundException("No friends found for this user");
+        }
+
+        String lowerQuery = query.toLowerCase();
+
+        List<User> result = friendships.stream()
+                .map(f -> f.getUser1().getUserID() == userID ? f.getUser2() : f.getUser1())
+                .filter(u -> u != null &&
+                        u.getUsername() != null &&
+                        u.getUsername().toLowerCase().contains(lowerQuery))
+                .toList();
+
+        if (result.isEmpty()) {
+            throw new GlobalExceptionHandler.ResourceNotFoundException("No matching friends found");
+        }
+
+        return result;
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

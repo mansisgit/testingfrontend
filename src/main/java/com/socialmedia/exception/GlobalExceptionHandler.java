@@ -32,6 +32,11 @@ public class GlobalExceptionHandler {
     public static class InvalidCredentialsException extends RuntimeException {
         public InvalidCredentialsException(String message) { super(message); }
     }
+    
+    public static class BadRequestException extends RuntimeException {
+        public BadRequestException(String message) { super(message); }
+    }
+
 
     
     // --- Exception Handlers ---
@@ -87,4 +92,15 @@ public class GlobalExceptionHandler {
                 request.getDescription(false));
         return new ResponseEntity<>(errorDetails, HttpStatus.INTERNAL_SERVER_ERROR);
     }
+    
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException ex, WebRequest request) {
+        ErrorResponse errorDetails = new ErrorResponse(
+                LocalDateTime.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                ex.getMessage(),
+                request.getDescription(false));
+        return new ResponseEntity<>(errorDetails, HttpStatus.BAD_REQUEST);
+    }
+
 }
