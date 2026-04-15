@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -56,5 +57,110 @@ public class LikeService {
 
     public long getLikeCount(int postID) {
         return likeRepository.countByPost_PostID(postID);
+    }
+    
+    public String removeLike(int postID, int userID) {
+        Optional<Post> postOpt = postRepository.findById(postID);
+        Optional<User> userOpt = userRepository.findById(userID);
+
+        if (postOpt.isPresent() && userOpt.isPresent()) {
+            Post post = postOpt.get();
+            User user = userOpt.get();
+
+            // Check if like exists
+            Optional<Like> likeOpt = likeRepository.findByPostAndUser(post, user);
+
+            if (likeOpt.isPresent()) {
+                likeRepository.deleteByPostAndUser(post, user);
+                return "Like removed successfully!";
+            } else {
+                return "Error: Like does not exist!";
+            }
+        }
+        return "Error: Post or User not found!";
+    }
+    
+    public boolean isPostLikedByUser(int postID, int userID) {
+        Optional<Post> postOpt = postRepository.findById(postID);
+        Optional<User> userOpt = userRepository.findById(userID);
+
+        if (postOpt.isPresent() && userOpt.isPresent()) {
+            return likeRepository.findByPostAndUser(postOpt.get(), userOpt.get()).isPresent();
+        }
+        return false;
+    }
+    
+    public List<Like> getLikesByPost(int postID) {
+        return likeRepository.findByPost_PostID(postID);
+    }
+    
+    public String toggleLike(int postID, int userID) {
+        Optional<Post> postOpt = postRepository.findById(postID);
+        Optional<User> userOpt = userRepository.findById(userID);
+
+        if (postOpt.isPresent() && userOpt.isPresent()) {
+            Post post = postOpt.get();
+            User user = userOpt.get();
+
+            Optional<Like> likeOpt = likeRepository.findByPostAndUser(post, user);
+
+            if (likeOpt.isPresent()) {
+                likeRepository.delete(likeOpt.get());
+                return "Like removed!";
+            } else {
+                Like like = new Like();
+                like.setPost(post);
+                like.setUser(user);
+                like.setTimestamp(java.time.LocalDateTime.now());
+                likeRepository.save(like);
+                return "Post liked!";
+            }
+        }
+        return "Error: Post or User not found!";
+    }
+    
+    public long getTotalLikesByUser(int userID) {
+        return likeRepository.countByUser_UserID(userID);
+    }
+    
+    public List<Object[]> getTopLikedPosts() {
+        return likeRepository.findTopLikedPosts();
+    }
+    
+    public String deleteLikesByPost(int postID) {
+        likeRepository.deleteByPost_PostID(postID);
+        return "All likes for this post deleted!";
+    }
+    
+    public String deleteLikesByUser(int userID) {
+        likeRepository.deleteByUser_UserID(userID);
+        return "All likes of this user deleted!";
+    }
+    
+    public Like getLikeById(int likeID) {
+        return likeRepository.findById(likeID)
+                .orElseThrow(() -> new RuntimeException("Like not found!"));
+    }
+
+    public boolean checkUserLikeOnPost(int postID, int userID) {
+        Optional<Post> postOpt = postRepository.findById(postID);
+        Optional<User> userOpt = userRepository.findById(userID);
+
+        if (postOpt.isPresent() && userOpt.isPresent()) {
+            return likeRepository.findByPostAndUser(postOpt.get(), userOpt.get()).isPresent();
+        }
+        return false;
+    }
+    
+    public Like getLikeByPostAndUser(int postID, int userID) {
+        Optional<Post> postOpt = postRepository.findById(postID);
+        Optional<User> userOpt = userRepository.findById(userID);
+
+        if (postOpt.isPresent() && userOpt.isPresent()) {
+            return likeRepository.findByPostAndUser(postOpt.get(), userOpt.get())
+                    .orElseThrow(() -> new RuntimeException("Like not found!"));
+        }
+
+        throw new RuntimeException("Post or User not found!");
     }
 }
