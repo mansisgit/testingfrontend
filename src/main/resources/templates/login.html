@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | Socials</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        .auth-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2.5rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 440px;
+            padding: 3rem !important;
+            border-radius: var(--radius-lg);
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        .auth-logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            letter-spacing: -1px;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-wrapper">
+        <div class="card auth-card">
+            <div class="auth-header">
+                <span class="auth-logo">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 12l10 5 10-5M2 17l10 5 10-5"></path>
+                    </svg>
+                    Socials
+                </span>
+                <p class="text-muted" style="font-weight: 500;">Welcome back to the network</p>
+            </div>
+            
+            <div th:if="${param.registered}" class="card" style="background: #f0fdf4; border-color: #bbf7d0; color: #166534; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; text-align: center; font-weight: 600;">
+                Registration successful! Please sign in.
+            </div>
+
+            <div th:if="${param.error}" class="card" style="background: #fef2f2; border-color: #fecaca; color: #991b1b; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; text-align: center; font-weight: 600;">
+                Invalid username or password.
+            </div>
+            
+            <div th:if="${param.logout}" class="card" style="background: #f5f3ff; border-color: #ddd6fe; color: #5b21b6; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; text-align: center; font-weight: 600;">
+                You have been logged out safely.
+            </div>
+
+            <form id="loginForm" class="flex-column gap-4">
+                <div class="form-group">
+                    <label class="text-muted" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; display: block;">Username</label>
+                    <input type="text" name="username" class="input" placeholder="e.g. gaurav_socials" required autofocus>
+                </div>
+                <div class="form-group">
+                    <label class="text-muted" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; display: block;">Password</label>
+                    <input type="password" name="password" class="input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn" style="margin-top: 1rem; padding: 1rem; font-size: 1rem;">Sign In to Socials</button>
+            </form>
+            
+            <div id="loginError" class="card" style="display: none; background: #fef2f2; border-color: #fecaca; color: #991b1b; padding: 1rem; margin-top: 1.5rem; font-size: 0.875rem; text-align: center; font-weight: 600;"></div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <p class="timestamp">Don't have an account? <a href="/register" style="color: var(--primary); font-weight: 700; text-decoration: none;">Join Socials</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const errorEl = document.getElementById('loginError');
+            errorEl.style.display = 'none';
+
+            try {
+                // Using URLSearchParams because your backend expects @RequestParam
+                const params = new URLSearchParams();
+                for (const pair of formData) params.append(pair[0], pair[1]);
+
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    body: params,
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    // Store token in a cookie valid for 7 days
+                    const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+                    document.cookie = `JWT-TOKEN=${data.token}; path=/; expires=${expires}; SameSite=Lax`;
+                    window.location.href = '/homepage';
+                } else {
+                    errorEl.textContent = 'Invalid username or password.';
+                    errorEl.style.display = 'block';
+                }
+            } catch (err) {
+                errorEl.textContent = 'An error occurred. Please try again.';
+                errorEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>

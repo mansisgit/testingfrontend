@@ -24,13 +24,18 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
             .authorizeHttpRequests()
-            .requestMatchers("/api/users/register", "/api/users/login").permitAll() // Public
-            .anyRequest().authenticated() // All others locked
+            .requestMatchers("/api/users/register", "/api/users/login").permitAll() // API Public
+            .requestMatchers("/login", "/register", "/css/**", "/js/**").permitAll() // Web Public
+            .anyRequest().authenticated()
+            .and()
+            .anonymous().disable() // Disable anonymous users entirely
+            .exceptionHandling()
+                .authenticationEntryPoint((request, response, authException) -> response.sendRedirect("/login"))
             .and()
             .sessionManagement()
-            .sessionCreationPolicy(SessionCreationPolicy.STATELESS); // JWT is stateless
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS);
 
-        // Add our custom JWT filter
+        // Keep JWT filter for API requests (though we might not use it in the web views yet)
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

@@ -1,0 +1,58 @@
+<div th:fragment="content">
+    <div style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text);">Network</h1>
+        <p class="text-muted" style="font-size: 0.9rem;">Manage connections and discover people in the Socials.</p>
+    </div>
+
+    <!-- Incoming Requests Section -->
+    <div style="margin-bottom: 3rem;">
+        <div class="flex align-center gap-2" style="margin-bottom: 1.5rem;">
+            <h3 style="font-weight: 800; color: var(--text);">Pending Requests</h3>
+            <span class="badge" th:text="${incomingRequests.size()}">0</span>
+        </div>
+
+        <div th:if="${incomingRequests.isEmpty()}" class="card" style="padding: 2rem; text-align: center; border: 2px dashed var(--border); background: none; box-shadow: none;">
+            <p class="text-muted">No pending connections at the moment.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;">
+            <div th:each="request : ${incomingRequests}" class="card" style="padding: 1.5rem;">
+                <div class="flex align-center gap-3" style="margin-bottom: 1.5rem;">
+                    <div class="avatar"></div>
+                    <div class="flex-column">
+                        <a th:href="@{'/profile/' + ${request.user1.userID}}" class="username" th:text="${request.user1.username}">User</a>
+                        <span class="timestamp" style="font-size: 0.75rem;">Wants to connect</span>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <form th:action="@{'/friendship/accept/' + ${request.friendshipID}}" method="post" style="flex: 1;">
+                        <button type="submit" class="btn" style="width: 100%;">Accept</button>
+                    </form>
+                    <form th:action="@{'/friendship/reject/' + ${request.friendshipID}}" method="post" style="flex: 1;">
+                        <button type="submit" class="btn btn-secondary" style="width: 100%;">Decline</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Suggestions Section -->
+    <div>
+        <h3 style="font-weight: 800; color: var(--text); margin-bottom: 1.5rem;">Explore People</h3>
+        
+        <div th:if="${suggestions.isEmpty()}" class="card" style="padding: 2rem; text-align: center;">
+            <p class="text-muted">No new suggestions found.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div th:each="suggestion : ${suggestions}" class="card" style="padding: 1.5rem; text-align: center;">
+                <div class="avatar avatar-lg" style="margin: 0 auto 1rem;"></div>
+                <a th:href="@{'/profile/' + ${suggestion.userID}}" class="username" style="display: block; margin-bottom: 0.25rem;" th:text="${suggestion.username}">Username</a>
+                <p class="timestamp" style="margin-bottom: 1.5rem;">Recommended for you</p>
+                <form th:action="@{'/friendship/request/' + ${suggestion.userID}}" method="post">
+                    <button type="submit" class="btn btn-secondary" style="width: 100%;">Connect</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

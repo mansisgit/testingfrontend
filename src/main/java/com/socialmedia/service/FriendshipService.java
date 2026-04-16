@@ -92,6 +92,8 @@ public class FriendshipService {
             throw new BadRequestException("Error: Only pending requests can be rejected!");
         }
 
+        notificationService.createNotification(friendship.getUser1(),
+                friendship.getUser2().getUsername() + " declined your friend request.");
         friendshipRepository.delete(friendship);
         return "Friend request rejected!";
     }

@@ -36,6 +36,19 @@ public class JwtFilter extends OncePerRequestFilter {
         // Check for Bearer token in the header
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             jwt = authHeader.substring(7);
+        } else {
+            // Check for token in cookies (for standard page navigation)
+            if (request.getCookies() != null) {
+                for (jakarta.servlet.http.Cookie cookie : request.getCookies()) {
+                    if ("JWT-TOKEN".equals(cookie.getName())) {
+                        jwt = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (jwt != null) {
             try {
                 username = jwtUtils.extractUsername(jwt);
             } catch (Exception e) {

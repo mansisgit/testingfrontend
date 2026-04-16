@@ -1,0 +1,70 @@
+<div th:fragment="content">
+    <div style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text);">Search Results</h1>
+        <p class="text-muted" style="font-size: 0.9rem;">Filtering socials for: <span style="font-weight: 700; color: var(--primary);" th:text="${query}">query</span></p>
+    </div>
+
+    <!-- People Results -->
+    <div style="margin-bottom: 3rem;" th:if="${not userResults.isEmpty()}">
+        <h3 style="font-weight: 800; color: var(--text); margin-bottom: 1.5rem;">People</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div th:each="userResult : ${userResults}" class="card" style="padding: 1.25rem;">
+                <div class="flex align-center justify-between">
+                    <div class="flex align-center gap-3">
+                        <div class="avatar"></div>
+                        <div class="flex-column">
+                            <a th:href="@{'/profile/' + ${userResult.userID}}" class="username" th:text="${userResult.username}">Username</a>
+                            <span class="timestamp" style="font-size: 0.75rem" th:text="${userResult.email}">email</span>
+                        </div>
+                    </div>
+                    <form th:if="${currentUser.userID != userResult.userID}" th:action="@{'/friendship/request/' + ${userResult.userID}}" method="post">
+                        <button type="submit" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Connect</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Results -->
+    <div th:if="${not postResults.isEmpty()}">
+        <h3 style="font-weight: 800; color: var(--text); margin-bottom: 1.5rem;">Posts</h3>
+        <div class="post-list">
+            <div th:each="post : ${postResults}" class="card" style="padding: 1.5rem; margin-bottom: 1.5rem;">
+                <!-- Post Header -->
+                <div class="flex align-center gap-3" style="margin-bottom: 1rem;">
+                    <div class="avatar avatar-sm"></div>
+                    <div class="flex-column">
+                        <a th:href="@{'/profile/' + ${post.user.userID}}" class="username" th:text="${post.user.username}">Username</a>
+                        <span class="timestamp" th:text="${#temporals.format(post.timestamp, 'MMM dd, yyyy HH:mm')}">Time</span>
+                    </div>
+                </div>
+
+                <!-- Post Content -->
+                <div style="margin-bottom: 1.5rem; font-size: 1.05rem; color: #334155; line-height: 1.6;">
+                    <p th:text="${post.content}">Post content...</p>
+                </div>
+
+                <!-- Interaction Bar -->
+                <div class="flex align-center gap-4" style="border-top: 1px solid var(--border); padding-top: 1rem;">
+                    <div class="flex align-center gap-1 text-muted" style="font-size: 0.9rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>
+                        <span th:text="${likeCounts.get(post.postID)}">0</span>
+                    </div>
+                    <div class="flex align-center gap-1 text-muted" style="font-size: 0.9rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                        <span th:text="${postComments.get(post.postID).size()}">0</span>
+                    </div>
+                    <a th:href="@{'/profile/' + ${post.user.userID}}" class="btn btn-secondary" style="margin-left: auto; padding: 0.4rem 0.8rem; font-size: 0.75rem;">View Original</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${userResults.isEmpty() and postResults.isEmpty()}" class="card" style="padding: 4rem; text-align: center;">
+        <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin-bottom: 1.5rem;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        <h2 style="font-weight: 800; color: var(--text); margin-bottom: 0.5rem;">No results found</h2>
+        <p class="text-muted">We couldn't find anything matching your search in the nebula.</p>
+        <a href="/" class="btn" style="margin-top: 2rem;">Back to Feed</a>
+    </div>
+</div>

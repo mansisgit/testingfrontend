@@ -1,0 +1,40 @@
+<div th:fragment="content">
+    <div style="margin-bottom: 2.5rem; display: flex; justify-content: space-between; align-items: flex-end;">
+        <div class="flex-column">
+            <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text);">Communities</h1>
+            <p class="text-muted" style="font-size: 0.9rem;">Join discussions and discover special interest groups.</p>
+        </div>
+        <div class="flex gap-2">
+            <form th:action="@{/group/create}" method="post" class="flex gap-2">
+                <input type="text" name="groupName" class="input" placeholder="New group name..."
+                    style="width: 250px; font-size: 0.85rem;">
+                <button type="submit" class="btn">Create Group</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Your Groups -->
+    <div style="margin-bottom: 3rem;">
+        <h3 style="font-weight: 800; color: var(--text); margin-bottom: 1.5rem;">Your Nexus</h3>
+
+        <div th:if="${userGroups.isEmpty()}" class="card"
+            style="padding: 2rem; text-align: center; border: 2px dashed var(--border); background: none; box-shadow: none;">
+            <p class="text-muted">You haven't joined or created any groups yet.</p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+            <div th:each="group : ${userGroups}" th:if="${group.groupName != null and !group.groupName.isEmpty()}"
+                class="card" style="padding: 1.5rem;">
+                <div class="flex-column">
+                    <div
+                        style="width: 40px; height: 40px; background: var(--primary); border-radius: var(--radius-sm); margin-bottom: 1rem; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800;">
+                        <span th:text="${#strings.substring(group.groupName, 0, 1)}">G</span>
+                    </div>
+                    <h4 style="font-weight: 800; color: var(--text); margin-bottom: 0.25rem;"
+                        th:text="${group.groupName}">Group Name</h4>
+                    <p class="timestamp">Founded by <span th:text="${group.admin.username}">Admin</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

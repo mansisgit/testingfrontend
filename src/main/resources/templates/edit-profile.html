@@ -1,0 +1,36 @@
+<div th:fragment="content">
+    <div style="margin-bottom: 2.5rem;">
+        <h1 style="font-size: 1.8rem; font-weight: 800; color: var(--text);">Account Settings</h1>
+        <p class="text-muted" style="font-size: 0.9rem;">Update your profile information and security settings.</p>
+    </div>
+
+    <div class="card" style="max-width: 600px; padding: 2.5rem;">
+        <form th:action="@{/profile/update}" method="post" class="flex-column gap-6">
+            <!-- Username -->
+            <div class="flex-column gap-2">
+                <label style="font-weight: 700; color: var(--text); font-size: 0.9rem;">Username</label>
+                <input type="text" name="username" class="input" th:value="${currentUser.username}" required>
+                <p class="text-muted" style="font-size: 0.75rem;">This is your unique handle in the socials.</p>
+            </div>
+
+            <!-- Email -->
+            <div class="flex-column gap-2" style="margin-top: 1.5rem;">
+                <label style="font-weight: 700; color: var(--text); font-size: 0.9rem;">Email Address</label>
+                <input type="email" name="email" class="input" th:value="${currentUser.email}" required>
+            </div>
+
+            <!-- Password -->
+            <div class="flex-column gap-2" style="margin-top: 1.5rem;">
+                <label style="font-weight: 700; color: var(--text); font-size: 0.9rem;">New Password</label>
+                <input type="password" name="password" class="input" placeholder="Leave blank to keep current password">
+                <p class="text-muted" style="font-size: 0.75rem;">Ensure your password is complex for better security.</p>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3" style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <button type="submit" class="btn">Save Changes</button>
+                <a th:href="@{'/profile/' + ${currentUser.userID}}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
