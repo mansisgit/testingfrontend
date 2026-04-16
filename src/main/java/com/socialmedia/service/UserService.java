@@ -53,6 +53,14 @@ public class UserService {
     public User getUserById(int userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("Error: User not found with ID: " + userId));
+
+
+    }
+    
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException("User not found with username: " + username));
+
     }
 
     public User updateUser(int userId, User updatedUser) {

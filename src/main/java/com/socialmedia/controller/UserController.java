@@ -40,7 +40,13 @@ public class UserController {
     public User getUserById(@PathVariable int userId) {
         return userService.getUserById(userId);
     }
-
+     
+    @GetMapping("/username/{username}")
+    public User getUserByUsername(@PathVariable String username) {
+        return userService.getUserByUsername(username);
+    }
+    
+    
     @PutMapping("/{userId}")
     public User updateUser(@PathVariable int userId, @RequestBody User user) {
         return userService.updateUser(userId, user);
